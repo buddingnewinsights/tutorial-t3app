@@ -13,13 +13,13 @@ import Link from "next/link";
 import { api } from "~/utils/api";
 
 const Home: NextPage = () => {
-  const hello = api.example.hello.useQuery({ text: "from tRPC" });
-
   const { isLoaded, isSignedIn, user } = useUser();
 
   if (!isLoaded || !isSignedIn) {
     return null;
   }
+
+  const { data } = api.posts.getAll.useQuery();
 
   return (
     <>
@@ -42,6 +42,11 @@ const Home: NextPage = () => {
               <SignInButton />
             </SignedOut>
           </header>
+          <div>
+            {data?.map((post) => (
+              <div key={post.id}>{post.content}</div>
+            ))}
+          </div>
         </div>
       </main>
     </>
