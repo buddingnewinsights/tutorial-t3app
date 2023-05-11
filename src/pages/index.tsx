@@ -13,8 +13,9 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
 
 import { type RouterOutputs, api } from "~/utils/api";
-import { LoadingPage } from "~/Components/loading";
+import { LoadingPage, LoadingSpinner } from "~/Components/loading";
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 
 dayjs.extend(relativeTime);
 
@@ -28,6 +29,14 @@ const CreatePostWizard = () => {
       setInput("");
       void ctx.posts.getAll.invalidate();
     },
+    onError: (e) => {
+      const errorMessage = e.data?.zodError?.fieldErrors.content;
+      if (errorMessage && errorMessage[0]) {
+        toast.error(errorMessage[0]);
+      } else {
+        toast.error("Failed to post. Please try again later.");
+      }
+    },
   });
 
   if (!user) return null;
@@ -35,6 +44,7 @@ const CreatePostWizard = () => {
   return (
     <div className="flex gap-2">
       <Image
+        priority
         src={user.profileImageUrl}
         alt="Photo"
         className="h-14 w-14 rounded-full"
@@ -46,10 +56,26 @@ const CreatePostWizard = () => {
         placeholder="Type some emojis"
         className="grow bg-transparent outline-none"
         value={input}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (input !== "") {
+              mutate({ content: input });
+            }
+          }
+        }}
         onChange={(e) => setInput(e.target.value)}
         disabled={isPosting}
       />
-      <button onClick={() => mutate({ content: input })}>Post</button>
+      {input !== "" && !isPosting && (
+        <button onClick={() => mutate({ content: input })}>Post</button>
+      )}
+
+      {isPosting && (
+        <div className="flex items-center justify-center">
+          <LoadingSpinner size={24} />
+        </div>
+      )}
     </div>
   );
 };
@@ -61,6 +87,7 @@ const PostView = (props: PostWithUser) => {
   return (
     <div className="container flex gap-4 border-b border-slate-400 p-4">
       <Image
+        priority
         src={author.profileImageUrl}
         alt="author image"
         className="h-14 w-14 rounded-full"
@@ -122,15 +149,11 @@ const Home: NextPage = () => {
                   <UserButton />
                 </SignedIn>
               </div>
-              <SignedOut>
-                {/* Signed out users get sign in button */}
-                <SignInButton />
-              </SignedOut>
             </div>
             {!isSignedIn && (
-              <div>
+              <SignedOut>
                 <SignInButton />
-              </div>
+              </SignedOut>
             )}
             {isSignedIn && (
               <div>
