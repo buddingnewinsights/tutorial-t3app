@@ -1,15 +1,12 @@
 import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import Head from "next/head";
-import { createServerSideHelpers } from "@trpc/react-query/server";
-import { appRouter } from "~/server/api/root";
-import { prisma } from "~/server/db";
-import superjson from "superjson";
 
 import { api } from "~/utils/api";
 import { PageLayout } from "~/Components/layout";
 import Image from "next/image";
 import { LoadingPage } from "~/Components/loading";
 import { PostView } from "~/Components/postview";
+import { generateSSGHelper } from "~/server/helpers/ssgHelper";
 
 const ProfileFeed = (props: { userId: string }) => {
   const { data, isLoading } = api.posts.getPostsByUserId.useQuery({
@@ -66,11 +63,7 @@ const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
 };
 
 export const getStaticProps: GetStaticProps = async (context) => {
-  const ssg = createServerSideHelpers({
-    router: appRouter,
-    ctx: { prisma, userId: null },
-    transformer: superjson,
-  });
+  const ssg = generateSSGHelper();
 
   const slug = context.params?.slug;
 
@@ -78,7 +71,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
 
   const username = slug?.replace("@", "");
 
-  // prefetch `post.byId`
+  // prefetch `profile.getUserByUsername`
   await ssg.profile.getUserByUsername.prefetch({ username });
 
   return {
