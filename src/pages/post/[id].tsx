@@ -13,8 +13,6 @@ const SinglePostPage: NextPage<{ id: string }> = ({ id }) => {
 
   if (!data) return <div>404</div>;
 
-  console.log(id);
-
   return (
     <>
       <Head>
