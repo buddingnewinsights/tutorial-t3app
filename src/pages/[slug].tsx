@@ -8,6 +8,26 @@ import superjson from "superjson";
 import { api } from "~/utils/api";
 import { PageLayout } from "~/Components/layout";
 import Image from "next/image";
+import { LoadingPage } from "~/Components/loading";
+import { PostView } from "~/Components/postview";
+
+const ProfileFeed = (props: { userId: string }) => {
+  const { data, isLoading } = api.posts.getPostsByUserId.useQuery({
+    userId: props.userId,
+  });
+
+  if (isLoading) return <LoadingPage />;
+
+  if (!data || data.length === 0) return <div>User has not posted</div>;
+
+  return (
+    <div className="flex w-full flex-col overflow-y-scroll">
+      {data.map((fullPost) => (
+        <PostView {...fullPost} key={fullPost.post.id} />
+      ))}
+    </div>
+  );
+};
 
 const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
   const { data } = api.profile.getUserByUsername.useQuery({
@@ -25,26 +45,25 @@ const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
       </Head>
 
       <PageLayout>
-        <div className="relative h-48 border-b border-black bg-slate-600">
+        <div className="relative h-64 border-b border-black bg-slate-600">
           <Image
             src={data.profileImageUrl}
-            alt={`@${data.username ?? ""}'s profile picture`}
+            alt={`@${data.username ?? "unknown"}'s profile picture`}
             width={128}
             height={128}
             className="absolute bottom-0 left-0 -mb-16 ml-4 rounded-full border-4 border-black"
           />
-          <div className="h-64"></div>
-          <div className="p-4 text-2xl font-bold">{`@${
-            data.username ?? ""
-          }`}</div>
-          <div className="border-b border-slate-400" />
         </div>
+        <div className="h-[128px]"></div>
+        <div className="p-4 text-2xl font-bold">{`@${
+          data.username ?? "unknown"
+        }`}</div>
+        <div className="w-full border-b border-slate-400" />
+        <ProfileFeed userId={data.id} />
       </PageLayout>
     </>
   );
 };
-
-export default ProfilePage;
 
 export const getStaticProps: GetStaticProps = async (context) => {
   const ssg = createServerSideHelpers({
@@ -77,3 +96,5 @@ export const getStaticPaths: GetStaticPaths = () => {
     fallback: "blocking",
   };
 };
+
+export default ProfilePage;
